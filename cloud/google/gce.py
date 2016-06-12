@@ -54,6 +54,12 @@ options:
       - service account email
     required: false
     default: null
+  service_account_email_instance:
+    version_added: "2.2.0"
+    description:
+      - service account email to set the target instance to use with service_account_permissions
+    required: false
+    default: null
   service_account_permissions:
     version_added: "2.0"
     description:
@@ -341,6 +347,7 @@ def create_instances(module, gce, instance_names):
     preemptible = module.params.get('preemptible')
     service_account_permissions = module.params.get('service_account_permissions')
     service_account_email = module.params.get('service_account_email')
+    service_account_email_instance = module.params.get('service_account_email_instance')
 
     if external_ip == "none":
         instance_external_ip = None
@@ -414,7 +421,10 @@ def create_instances(module, gce, instance_names):
                 bad_perms.append(perm)
         if len(bad_perms) > 0:
             module.fail_json(msg='bad permissions: %s' % str(bad_perms))
-        ex_sa_perms.append({'email': "default"})
+        if service_account_email_instance:
+            ex_sa_perms.append({'email': service_account_email_instance})
+        else:
+            ex_sa_perms.append({'email': "default"})
         ex_sa_perms[0]['scopes'] = service_account_permissions
 
     # These variables all have default values but check just in case
@@ -534,6 +544,7 @@ def main():
             tags = dict(type='list'),
             zone = dict(default='us-central1-a'),
             service_account_email = dict(),
+            service_account_email_instance = dict(),
             service_account_permissions = dict(type='list'),
             pem_file = dict(),
             credentials_file = dict(),
